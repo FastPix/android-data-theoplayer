@@ -84,7 +84,7 @@ publishing {
     repositories {
         maven {
             name = "GithubPackages"
-            url = uri("https://maven.pkg.github.com/FastPix/android-theo-player-sdk")
+            url = uri("https://maven.pkg.github.com/FastPix/android-data-theoplayer")
             credentials {
                 username = localProperties.getProperty("lpr.user")
                 password = localProperties.getProperty("lpr.key")
