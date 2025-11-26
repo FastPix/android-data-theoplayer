@@ -1,0 +1,143 @@
+# =========================
+# Android / Gradle
+# =========================
+
+# Gradle files
+.gradle/
+build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+.gradle/
+.gradle/**
+
+# Local configuration
+local.properties
+*.iml
+
+# Android Studio captures
+captures/
+
+# Generated files
+output.json
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.log
+
+# IntelliJ / Android Studio
+.idea/
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/gradle.xml
+.idea/**/libraries
+.idea/**/caches
+.idea/**/shelf
+.idea/**/httpRequests
+.idea/**/dataSources/
+.idea/**/dataSources.ids
+.idea/**/dataSources.local.xml
+.idea/**/sqlDataSources.xml
+.idea/**/dynamic.xml
+.idea/**/uiDesigner.xml
+.idea/**/navEditor.xml
+
+# JetBrains
+*.iml
+*.ipr
+*.iws
+
+# Keystore files (⚠️ DO NOT COMMIT YOUR KEYSTORE)
+*.jks
+*.keystore
+*.key
+*.pem
+*.p12
+
+# Signing configs
+signing.properties
+signingConfigs.properties
+
+# Local environment files
+*.env
+.env.*
+
+# Google services (keep template only)
+google-services.json
+GoogleService-Info.plist
+!app/google-services.json.template
+
+# Android Profiling
+*.hprof
+
+# Gradle logs and caches
+.gradle/
+gradle-app.setting
+.gradle-test-kit/
+.gradle-cache/
+
+# Misc
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
+*.swp
+*.orig
+*.rej
+
+# Unit test and coverage reports
+test-results/
+reports/
+*.ec
+coverage/
+
+# NDK / CMake
+.externalNativeBuild/
+.cxx/
+
+# Firebase / Crashlytics
+fabric.properties
+crashlytics-build.properties
+
+# Lint
+lint/intermediates/
+lint/generated/
+lint/outputs/
+lint/tmp/
+*.lint
+
+# Kotlin specific
+*.kotlin_module
+*.kotlin_metadata
+
+# Android Studio navigation editor temp files
+.navigation/
+
+# Logs
+*.log
+
+# =========================
+# Optional additions
+# =========================
+
+# If you use Jetpack Compose previews caching
+compose-cache/
+
+# If you use Fastlane for CI/CD
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# If you use NPM/Yarn (for React Native hybrid setups)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# If you use Flutter modules inside Android
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+pubspec.lock
+build/

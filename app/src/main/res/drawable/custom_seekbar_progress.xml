@@ -1,0 +1,28 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 1. Background (gray - total duration) -->
+    <item android:id="@android:id/background">
+        <shape>
+            <solid android:color="#808080" />
+        </shape>
+    </item>
+
+    <!-- 2. Secondary progress (white - buffered) -->
+    <item android:id="@android:id/secondaryProgress">
+        <clip>
+            <shape>
+                <solid android:color="#FFFFFF" />
+            </shape>
+        </clip>
+    </item>
+
+    <!-- 3. Progress (blue - played) -->
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape>
+                <solid android:color="#2196F3" />
+            </shape>
+        </clip>
+    </item>
+
+</layer-list>
