@@ -12,9 +12,9 @@ import com.theoplayer.android.api.event.player.PlayerEventTypes
 import com.theoplayer.android.api.event.track.mediatrack.video.VideoTrackEventTypes
 import com.theoplayer.android.api.event.track.mediatrack.video.list.AddTrackEvent
 import com.theoplayer.android.api.event.track.mediatrack.video.list.VideoTrackListEventTypes
-import com.theoplayer.android.api.network.http.HTTPInterceptor
-import com.theoplayer.android.api.network.http.InterceptableHTTPResponse
+import com.theoplayer.android.api.player.PreloadType
 import com.theoplayer.android.api.player.ReadyState
+import io.fastpix.data.FastPixAnalytics
 import io.fastpix.data.FastPixDataSDK
 import io.fastpix.data.domain.SDKConfiguration
 import io.fastpix.data.domain.enums.PlayerEventType
@@ -22,7 +22,16 @@ import io.fastpix.data.domain.listeners.PlayerListener
 import io.fastpix.data.domain.model.BandwidthModel
 import io.fastpix.data.domain.model.ErrorModel
 import io.fastpix.data.domain.model.PlayerDataDetails
+import io.fastpix.data.utils.Logger
 import io.fastpix.theo_player_data.info.THEOPlayerLibraryInfo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.ceil
 
 class FastPixBaseTheoPlayer(
@@ -31,7 +40,7 @@ class FastPixBaseTheoPlayer(
     private val customerData: CustomerData,
     private val enableLogging: Boolean = false
 ) : PlayerListener {
-    private lateinit var fastPixDataSDK: FastPixDataSDK
+    private var fastPixDataSDK: FastPixDataSDK? = null
     private val TAG = "FastPixBaseTheoPlayer"
     private val handler = Handler(Looper.getMainLooper())
     private var currentEventState: PlayerEvent? = null
@@ -48,21 +57,26 @@ class FastPixBaseTheoPlayer(
     private var errorMessage: String? = null
     private var isReleased = false
 
+    private val PULSE_INTERVAL = 10_000L // 1 second
+    private val isPulseScheduled = AtomicBoolean(false)
+    private val dispatcherScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var pulseJob: Job? = null
+
 
     private fun initializeFastPixSDK() {
-        fastPixDataSDK = FastPixDataSDK()
         val sdkConfiguration = SDKConfiguration(
             workspaceId = customerData.workSpaceId,
             beaconUrl = customerData.beaconUrl,
             playerData = customerData.playerData ?: PlayerDataDetails(
-                "THEOplayer", playerView.version
+                "theo-player", playerView.version
             ),
             videoData = customerData.videoDetails,
             playerListener = this,
             enableLogging = enableLogging,
             customData = customerData.customDataDetails
         )
-        fastPixDataSDK.initialize(sdkConfiguration, context)
+        FastPixAnalytics.initialize(sdkConfiguration, context)
+        fastPixDataSDK = FastPixAnalytics.getSDK()
         dispatchViewBegin()
         dispatchPlayerReady()
     }
@@ -101,7 +115,7 @@ class FastPixBaseTheoPlayer(
 
         playerView.player.addEventListener(PlayerEventTypes.READYSTATECHANGE) { readyStateChange ->
             val state = readyStateChange.readyState
-            state?.let {
+            state.let {
                 if (previousReadyState != null && (state.ordinal < ReadyState.HAVE_FUTURE_DATA.ordinal) && (state.ordinal < (previousReadyState?.ordinal
                         ?: 0))
                 ) {
@@ -170,87 +184,94 @@ class FastPixBaseTheoPlayer(
     }
 
     private fun dispatchBufferedEvent() {
-        if (isReleased || !::fastPixDataSDK.isInitialized) return
+        if (isReleased || fastPixDataSDK == null) return
         if (transitionToEvent(PlayerEvent.BUFFERED)) {
             if (enableLogging) {
                 Log.d(TAG, "Dispatching Buffered event")
             }
-            fastPixDataSDK.dispatchEvent(PlayerEventType.buffered)
+            cancelPulseEvent()
+            fastPixDataSDK?.dispatchEvent(PlayerEventType.buffered)
         }
     }
 
     private fun dispatchBuffering() {
-        if (isReleased || !::fastPixDataSDK.isInitialized) return
+        if (isReleased || fastPixDataSDK == null) return
         if (transitionToEvent(PlayerEvent.BUFFERING)) {
             if (enableLogging) {
                 Log.d(TAG, "Dispatching Buffering event")
             }
-            fastPixDataSDK.dispatchEvent(PlayerEventType.buffering)
+            cancelPulseEvent()
+            fastPixDataSDK?.dispatchEvent(PlayerEventType.buffering)
         }
     }
 
     private fun dispatchError(error: ErrorEvent) {
-        if (isReleased || !::fastPixDataSDK.isInitialized) return
+        if (isReleased || fastPixDataSDK == null) return
         if (transitionToEvent(PlayerEvent.ERROR)) {
             if (enableLogging) {
                 Log.d(TAG, "Dispatching Error event: ${error.errorObject.cause}")
             }
             errorCode = error.errorObject.code.id.toString()
             errorMessage = "${error.errorObject.code}"
-            fastPixDataSDK.dispatchEvent(PlayerEventType.error)
+            cancelPulseEvent()
+            fastPixDataSDK?.dispatchEvent(PlayerEventType.error)
         }
     }
 
     private fun dispatchEnded() {
-        if (isReleased || !::fastPixDataSDK.isInitialized) return
+        if (isReleased || fastPixDataSDK == null) return
         isPlaying = false
         if (transitionToEvent(PlayerEvent.ENDED)) {
             if (enableLogging) {
                 Log.d(TAG, "Dispatching Ended event")
             }
-            fastPixDataSDK.dispatchEvent(PlayerEventType.ended)
+            cancelPulseEvent()
+            fastPixDataSDK?.dispatchEvent(PlayerEventType.ended)
         }
     }
 
     private fun dispatchSeeked(currentTime: Int) {
-        if (isReleased || !::fastPixDataSDK.isInitialized) return
+        if (isReleased || fastPixDataSDK == null) return
         if (transitionToEvent(PlayerEvent.SEEKED)) {
             if (enableLogging) {
                 Log.d(TAG, "Dispatching Seeked event")
             }
-            fastPixDataSDK.dispatchEvent(PlayerEventType.seeked, currentTime)
+            cancelPulseEvent()
+            fastPixDataSDK?.dispatchEvent(PlayerEventType.seeked, currentTime)
         }
     }
 
     private fun dispatchSeeking() {
-        if (isReleased || !::fastPixDataSDK.isInitialized) return
+        if (isReleased || fastPixDataSDK == null) return
         if (transitionToEvent(PlayerEvent.SEEKING)) {
             if (enableLogging) {
                 Log.d(TAG, "Dispatching Seeking event")
             }
-            // Temporarily set currentPosition to seeking start position for the seeking event
-            fastPixDataSDK.dispatchEvent(PlayerEventType.seeking)
+            cancelPulseEvent()
+            fastPixDataSDK?.dispatchEvent(PlayerEventType.seeking)
         }
     }
 
     private fun dispatchPause() {
-        if (isReleased || !::fastPixDataSDK.isInitialized) return
+        if (isReleased || fastPixDataSDK == null) return
         isPlaying = false
         if (transitionToEvent(PlayerEvent.PAUSE)) {
             if (enableLogging) {
                 Log.d(TAG, "Dispatching Pause event")
             }
-            fastPixDataSDK.dispatchEvent(PlayerEventType.pause)
+            cancelPulseEvent()
+            fastPixDataSDK?.dispatchEvent(PlayerEventType.pause)
         }
     }
 
     private fun dispatchVariantChange() {
-        if (isReleased || !::fastPixDataSDK.isInitialized) return
+        if (isReleased || fastPixDataSDK == null) return
         if (transitionToEvent(PlayerEvent.VARIANT_CHANGED)) {
             if (enableLogging) {
                 Log.d(TAG, "Dispatching VariantChange event")
             }
-            fastPixDataSDK.dispatchEvent(PlayerEventType.variantChanged)
+            schedulePulseEvents()
+            fastPixDataSDK?.dispatchEvent(PlayerEventType.variantChanged)
         }
     }
 
@@ -277,40 +298,44 @@ class FastPixBaseTheoPlayer(
     }
 
     private fun dispatchPlaying() {
-        if (isReleased || !::fastPixDataSDK.isInitialized) return
+        if (isReleased || fastPixDataSDK == null) return
         isPlaying = true
         if (transitionToEvent(PlayerEvent.PLAYING)) {
             if (enableLogging) {
                 Log.d(TAG, "Dispatching Playing event")
             }
-            fastPixDataSDK.dispatchEvent(PlayerEventType.playing)
+            schedulePulseEvents()
+            fastPixDataSDK?.dispatchEvent(PlayerEventType.playing)
         }
     }
 
     private fun dispatchPlayerReady() {
-        if (isReleased || !::fastPixDataSDK.isInitialized) return
+        if (isReleased || fastPixDataSDK == null) return
         if (enableLogging) {
             Log.d(TAG, "Dispatching Play Ready event")
         }
-        fastPixDataSDK.dispatchEvent(PlayerEventType.playerReady)
+        cancelPulseEvent()
+        fastPixDataSDK?.dispatchEvent(PlayerEventType.playerReady)
     }
 
     private fun dispatchViewBegin() {
-        if (isReleased || !::fastPixDataSDK.isInitialized) return
+        if (isReleased || fastPixDataSDK == null) return
         if (enableLogging) {
             Log.d(TAG, "Dispatching ViewBegin event")
         }
-        fastPixDataSDK.dispatchEvent(PlayerEventType.viewBegin)
+        cancelPulseEvent()
+        fastPixDataSDK?.dispatchEvent(PlayerEventType.viewBegin)
     }
 
     private fun dispatchPlay() {
-        if (isReleased || !::fastPixDataSDK.isInitialized) return
+        if (isReleased || fastPixDataSDK == null) return
         isPlaying = true
         if (transitionToEvent(PlayerEvent.PLAY)) {
             if (enableLogging) {
                 Log.d(TAG, "Dispatching Play event")
             }
-            fastPixDataSDK.dispatchEvent(PlayerEventType.play)
+            cancelPulseEvent()
+            fastPixDataSDK?.dispatchEvent(PlayerEventType.play)
         }
     }
 
@@ -337,17 +362,20 @@ class FastPixBaseTheoPlayer(
     override fun mimeType(): String? =
         playerView.player.source?.sources?.firstOrNull()?.type?.mimeType
 
-    override fun sourceFps(): String? = sourceFrameRate?.toString()
+    override fun sourceFps(): Int? = sourceFrameRate
 
     override fun sourceAdvertisedBitrate(): String? = sourceBitrate?.toString()
 
-    override fun sourceAdvertiseFrameRate(): String? = sourceFrameRate?.toString()
+    override fun sourceAdvertiseFrameRate(): Int? = sourceFrameRate
 
     override fun sourceDuration(): Int? = sourceDuration
 
     override fun isPause(): Boolean? = !isPlaying
 
     override fun isAutoPlay(): Boolean? = playerView.player.isAutoplay
+    override fun preLoad(): Boolean? {
+        return playerView.player.preload != PreloadType.NONE
+    }
 
     override fun isBuffering(): Boolean? = currentEventState == PlayerEvent.BUFFERING
 
@@ -373,22 +401,13 @@ class FastPixBaseTheoPlayer(
 
     override fun getVideoCodec(): String? = null
 
-    override fun getSoftwareName(): String? = "THEOplayer"
+    override fun getSoftwareName(): String? = THEOPlayerLibraryInfo.SDK_NAME
 
-    override fun getSoftwareVersion(): String? = playerView.version
-    override fun getFastPixSDKName(): String? {
-        return THEOPlayerLibraryInfo.SDK_NAME
-    }
-
-    override fun getFastPixSDKVersion(): String? {
-        return THEOPlayerLibraryInfo.SDK_VERSION
-    }
+    override fun getSoftwareVersion(): String? = THEOPlayerLibraryInfo.SDK_VERSION
 
     fun release() {
         isReleased = true
-        if (::fastPixDataSDK.isInitialized) {
-            fastPixDataSDK.release()
-        }
+        FastPixAnalytics.release()
         sourceFrameRate = null
         currentEventState = null
         videoSourceHeight = null
@@ -398,6 +417,28 @@ class FastPixBaseTheoPlayer(
         errorCode = null
         sourceDuration = null
         errorMessage = null
+    }
+
+    private fun schedulePulseEvents() {
+        if (isPulseScheduled.get()) return
+        isPulseScheduled.set(true)
+        pulseJob = dispatcherScope.launch {
+            while (isPulseScheduled.get()) {
+                delay(PULSE_INTERVAL)
+                if (isPulseScheduled.get()) {
+                    withContext(Dispatchers.Main) {
+                        fastPixDataSDK?.dispatchEvent(PlayerEventType.pulse)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun cancelPulseEvent() {
+        if (isPulseScheduled.get()) {
+            isPulseScheduled.set(false)
+            pulseJob?.cancel()
+        }
     }
 
 }

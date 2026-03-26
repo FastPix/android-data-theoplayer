@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.3]
+Update FastPix THEO Player SDK to version 0.0.3
+
+- Transitioned to `FastPixAnalytics` for SDK initialization and management.
+- Implemented a heartbeat pulse mechanism using coroutines to dispatch periodic pulse events during playback.
+- Updated event dispatching logic to manage pulse scheduling and cancellations across player states (playing, pause, buffering, etc.).
+- Refactored `FastPixBaseTheoPlayer` to use nullable `fastPixDataSDK` and improved resource cleanup in `release()`.
+- Updated `preLoad`, `sourceFps`, and `sourceAdvertiseFrameRate` overrides to match updated SDK interfaces.
+- Bumped `coreVersion` and library metadata to `0.0.3`.
+
 ## [0.0.2]
  - Version Upgrade
 

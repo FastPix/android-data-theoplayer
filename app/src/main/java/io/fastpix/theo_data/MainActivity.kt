@@ -68,7 +68,7 @@ class MainActivity : AppCompatActivity() {
             videoDrmType = "Drm Type"
         )
         val customerData = CustomerData(
-            workSpaceId = "workspace-id",
+            workSpaceId = "1109888358169935873",
             videoDetails = videoDataDetails,
             playerData = PlayerDataDetails("Theo-player", "5+"),
             customDataDetails = CustomDataDetails(
