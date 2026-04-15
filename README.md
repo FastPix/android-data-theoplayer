@@ -1,7 +1,7 @@
 # FastPix THEO Player SDK
 
 [![License](https://img.shields.io/badge/License-Proprietary-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.0.3-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.0.4-green.svg)](CHANGELOG.md)
 [![Min SDK](https://img.shields.io/badge/minSdk-24-orange.svg)](theo-player-data/build.gradle.kts)
 
 The FastPix THEO Player SDK provides seamless integration between THEOplayer and the FastPix
