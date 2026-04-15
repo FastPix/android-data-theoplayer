@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.4]
+
+- Upgraded `coreVersion` dependency from `1.2.7` to `1.2.9`.
+- Refined pulse event scheduling across playback events (`play`, `viewBegin`, `buffering`, and `seeked`) to keep heartbeat behavior consistent during active playback.
+- Improved `release()` cleanup by cancelling pulse events and releasing analytics only when SDK is initialized.
+
 ## [0.0.3]
 Update FastPix THEO Player SDK to version 0.0.3
 

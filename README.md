@@ -57,7 +57,7 @@ Add the FastPix THEO Player SDK and THEOplayer dependencies to your app's `build
 ```kotlin
 dependencies {
     // FastPix THEO Player SDK
-    implementation("io.fastpix.data:theo:0.0.3")
+    implementation("io.fastpix.data:theo:0.0.4")
 }
 ```
 

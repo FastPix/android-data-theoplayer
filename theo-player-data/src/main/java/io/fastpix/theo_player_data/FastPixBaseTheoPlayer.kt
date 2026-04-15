@@ -22,7 +22,6 @@ import io.fastpix.data.domain.listeners.PlayerListener
 import io.fastpix.data.domain.model.BandwidthModel
 import io.fastpix.data.domain.model.ErrorModel
 import io.fastpix.data.domain.model.PlayerDataDetails
-import io.fastpix.data.utils.Logger
 import io.fastpix.theo_player_data.info.THEOPlayerLibraryInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -189,7 +188,6 @@ class FastPixBaseTheoPlayer(
             if (enableLogging) {
                 Log.d(TAG, "Dispatching Buffered event")
             }
-            cancelPulseEvent()
             fastPixDataSDK?.dispatchEvent(PlayerEventType.buffered)
         }
     }
@@ -200,7 +198,7 @@ class FastPixBaseTheoPlayer(
             if (enableLogging) {
                 Log.d(TAG, "Dispatching Buffering event")
             }
-            cancelPulseEvent()
+            schedulePulseEvents()
             fastPixDataSDK?.dispatchEvent(PlayerEventType.buffering)
         }
     }
@@ -236,7 +234,11 @@ class FastPixBaseTheoPlayer(
             if (enableLogging) {
                 Log.d(TAG, "Dispatching Seeked event")
             }
-            cancelPulseEvent()
+            if (playerView.player.isPaused) {
+                cancelPulseEvent()
+            } else {
+                schedulePulseEvents()
+            }
             fastPixDataSDK?.dispatchEvent(PlayerEventType.seeked, currentTime)
         }
     }
@@ -247,7 +249,6 @@ class FastPixBaseTheoPlayer(
             if (enableLogging) {
                 Log.d(TAG, "Dispatching Seeking event")
             }
-            cancelPulseEvent()
             fastPixDataSDK?.dispatchEvent(PlayerEventType.seeking)
         }
     }
@@ -270,7 +271,6 @@ class FastPixBaseTheoPlayer(
             if (enableLogging) {
                 Log.d(TAG, "Dispatching VariantChange event")
             }
-            schedulePulseEvents()
             fastPixDataSDK?.dispatchEvent(PlayerEventType.variantChanged)
         }
     }
@@ -314,7 +314,6 @@ class FastPixBaseTheoPlayer(
         if (enableLogging) {
             Log.d(TAG, "Dispatching Play Ready event")
         }
-        cancelPulseEvent()
         fastPixDataSDK?.dispatchEvent(PlayerEventType.playerReady)
     }
 
@@ -323,7 +322,7 @@ class FastPixBaseTheoPlayer(
         if (enableLogging) {
             Log.d(TAG, "Dispatching ViewBegin event")
         }
-        cancelPulseEvent()
+        schedulePulseEvents()
         fastPixDataSDK?.dispatchEvent(PlayerEventType.viewBegin)
     }
 
@@ -334,7 +333,7 @@ class FastPixBaseTheoPlayer(
             if (enableLogging) {
                 Log.d(TAG, "Dispatching Play event")
             }
-            cancelPulseEvent()
+            schedulePulseEvents()
             fastPixDataSDK?.dispatchEvent(PlayerEventType.play)
         }
     }
@@ -407,7 +406,10 @@ class FastPixBaseTheoPlayer(
 
     fun release() {
         isReleased = true
-        FastPixAnalytics.release()
+        cancelPulseEvent()
+        if (fastPixDataSDK != null) {
+            FastPixAnalytics.release()
+        }
         sourceFrameRate = null
         currentEventState = null
         videoSourceHeight = null
