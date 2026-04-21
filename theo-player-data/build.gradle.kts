@@ -63,7 +63,7 @@ publishing {
         create<MavenPublication>("bar") {
             groupId = "io.fastpix.data"
             artifactId = "theo"
-            version = "0.0.4"
+            version = "0.0.5"
             artifact("${buildDir}/outputs/aar/theo-player-data-release.aar")
 
             pom.withXml {

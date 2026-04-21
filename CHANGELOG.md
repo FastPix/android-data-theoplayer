@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [`0.0.5`]
+- Upgraded Core SDK to 1.3.0
+
 ## [0.0.4]
 
 - Upgraded `coreVersion` dependency from `1.2.7` to `1.2.9`.
