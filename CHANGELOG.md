@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.6]
+- Bumped `SDK_VERSION` to `0.0.6` in `THEOPlayerLibraryInfo`.
+- Updated Maven publication version to `0.0.6` in `build.gradle.kts`.
+- Updated SDK version references in `README.md` to `0.0.6`.
+- Incremented `coreVersion` to `1.3.1` in `libs.versions.toml`.
+
 ## [`0.0.5`]
 - Upgraded Core SDK to 1.3.0
 
