@@ -422,7 +422,7 @@ Logs will appear in Logcat with the tag `FastPixBaseTheoPlayer`.
 For questions, issues, or feature requests:
 
 - **Email**: support@fastpix.io
-- **Documentation**: [FastPix Documentation](https://docs.fastpix.io)
+- **Documentation**: [FastPix Documentation](https://docs.fastpix.com)
 - **GitHub Issues**: [Report an issue](https://github.com/FastPix/android-data-theoplayer/issues)
 
 ## License
