@@ -8,7 +8,7 @@ The **FastPix Video Data SDK for THEOplayer** is a third-party analytics SDK tha
 
 It is **not a video player** and does not replace THEOplayer. It is the monitoring layer you add to the THEOplayer you already ship - the same role Mux Data plays - so you can track startup time, rebuffering, bitrate, errors, and viewer engagement without building an analytics pipeline.
 
-**Works with:** THEOplayer Android SDK 5.0+ · Android 7.0+ (API 24) · Kotlin and Java · `io.fastpix.data:theo`
+**Works with:** THEOplayer Android SDK 5.0+ (tested with 10.5.0) · Android 7.0+ (API 24) · Kotlin and Java · `io.fastpix.data:theo`
 
 [Monitor THEOplayer docs](https://fastpix.com/docs/video-data/monitors/theoplayer) · [Create a free account](https://dashboard.fastpix.com/signup?utm_source=github&utm_medium=referral&utm_campaign=github_signup)
 
@@ -20,8 +20,9 @@ Skip straight to a section without scrolling:
 |---|---|---|
 | [Requirements](#requirements) | [Why FastPix](#why-fastpix) | [Detailed configuration](#detailed-configuration) |
 | [Install the SDK](#installation) | [Who it's for](#who-its-for) | [Which FastPix SDK?](#which-fastpix-sdk-for-which-android-player) |
-| [Quick start](#quick-start) | [What you can track](#what-you-can-track) | [FAQ](#faq) |
-| [Complete sample](#complete-sample-player-implementation) | [Lifecycle management](#lifecycle-management) | [Troubleshooting](#troubleshooting) |
+| [Configure your THEOplayer license](#configure-your-theoplayer-license) | [What you can track](#what-you-can-track) | [FAQ](#faq) |
+| [Quick start](#quick-start) | [Lifecycle management](#lifecycle-management) | [Troubleshooting](#troubleshooting) |
+| [Complete sample](#complete-sample-player-implementation) | | |
 
 ## Why FastPix
 
@@ -50,7 +51,8 @@ THEOplayer fires playback events, but turning them into viewer-facing quality me
 
 - **Minimum Android SDK**: 24 (Android 7.0)
 - **Target/Compile SDK**: 35+
-- **THEOplayer SDK**: 5.0+
+- **THEOplayer SDK**: 5.0+ (tested with 10.5.0)
+- **A THEOplayer SDK license**: required to play your own content (see [Configure your THEOplayer license](#configure-your-theoplayer-license))
 - **Kotlin**: 2.0.21+
 - **Java**: 11
 
@@ -58,67 +60,114 @@ You will also need a FastPix account and a workspace key. [Create a free account
 
 ## Installation
 
-### Add GitHub Packages Repository
+### Add the repositories
 
-Add the GitHub Packages repository to your project's `settings.gradle.kts`:
+In your project's `settings.gradle.kts`, add all three repositories the SDK needs. THEOplayer is not on Maven Central, and the FastPix core library lives in its own GitHub Packages repository:
 
 ```kotlin
 dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // THEOplayer SDK (not on Maven Central)
+        maven { url = uri("https://maven.theoplayer.com/releases") }
+        // FastPix THEOplayer SDK
         maven {
             url = uri("https://maven.pkg.github.com/FastPix/android-data-theoplayer")
             credentials {
-                username =
-                    project.findProperty("lpr.user")
-                password =
-                    project.findProperty("lpr.key")
+                val props = java.util.Properties()
+                val f = file("${rootDir}/local.properties")
+                if (f.exists()) f.inputStream().use { props.load(it) }
+                username = props.getProperty("gpr.user")
+                password = props.getProperty("gpr.key")
+            }
+        }
+        // FastPix core (transitive dependency of the THEOplayer SDK)
+        maven {
+            url = uri("https://maven.pkg.github.com/FastPix/android-core-data-sdk")
+            credentials {
+                val props = java.util.Properties()
+                val f = file("${rootDir}/local.properties")
+                if (f.exists()) f.inputStream().use { props.load(it) }
+                username = props.getProperty("gpr.user")
+                password = props.getProperty("gpr.key")
             }
         }
     }
 }
 ```
 
+### Configure authentication
+
+Create or update `local.properties` in your project root with your GitHub credentials. This file is git-ignored, so your token is never committed:
+
+```properties
+gpr.user=YOUR_GITHUB_USERNAME
+gpr.key=YOUR_GITHUB_PERSONAL_ACCESS_TOKEN
+```
+
+Use a GitHub personal access token with the `read:packages` scope.
+
 ### Add Dependencies
 
-Add the FastPix THEO Player SDK and THEOplayer dependencies to your app's `build.gradle.kts`:
+Add the FastPix THEOplayer SDK to your app's `build.gradle.kts`. The THEOplayer SDK (`com.theoplayer.theoplayer-sdk-android:core`) and the FastPix core library resolve automatically as transitive dependencies, provided the repositories above are configured:
 
 ```kotlin
 dependencies {
-    // FastPix THEO Player SDK
+    // FastPix THEOplayer SDK (pulls in THEOplayer + FastPix core)
     implementation("io.fastpix.data:theo:0.0.6")
 }
 ```
 
-### Configure Authentication
+## Configure your THEOplayer license
 
-Create or update `local.properties` in your project root with your GitHub credentials:
+THEOplayer requires a license to play your own content. The SDK ships with a **baked-in demo license** that only covers THEOplayer's demo streams (`cdn.theoplayer.com`) - if you point it at your own video URL without a license, playback fails and Logcat shows:
 
-```properties
-lpr.user=YOUR_GITHUB_USERNAME
-lpr.key=YOUR_GITHUB_PERSONAL_ACCESS_TOKEN
+```
+THEOplayer License: The baked-in license is used. Please update the configuration with your license
 ```
 
-> **Note**: Make sure to add `local.properties` to your `.gitignore` to keep credentials secure.
+1. Get your license string from the [THEOplayer portal](https://portal.theoplayer.com) (the same account you use for the THEOplayer Maven repository).
+2. Apply it when you create the player, either in code:
+
+   ```kotlin
+   import com.theoplayer.android.api.THEOplayerConfig
+   import com.theoplayer.android.api.THEOplayerView
+
+   val config = THEOplayerConfig.Builder()
+       .license("YOUR_THEOPLAYER_LICENSE_STRING")
+       .build()
+   val theoPlayerView = THEOplayerView(this, config)
+   ```
+
+   or as an attribute in your layout XML:
+
+   ```xml
+   <com.theoplayer.android.api.THEOplayerView
+       android:id="@+id/theo_player_view"
+       android:layout_width="match_parent"
+       android:layout_height="match_parent"
+       app:license="YOUR_THEOPLAYER_LICENSE_STRING" />
+   ```
+
+Attach the FastPix SDK to the licensed `THEOplayerView` exactly as shown in [Quick start](#quick-start).
 
 ## Quick Start
 
 ### Add THEOplayerView to Your Layout
 
-Add the `THEOplayerView` to your activity/fragment layout:
+Add the `THEOplayerView` to your activity/fragment layout (include your `app:license` here, or set it in code - see [Configure your THEOplayer license](#configure-your-theoplayer-license)):
 
 ```xml
-
-<com.theoplayer.android.api.THEOplayerView 
+<com.theoplayer.android.api.THEOplayerView
     android:id="@+id/theo_player_view"
-    android:layout_width="match_parent" 
+    android:layout_width="match_parent"
     android:layout_height="match_parent" />
 ```
 
 ### Initialize FastPix SDK in Your Activity
 
-Here's a complete example of how to integrate FastPix SDK with THEOplayer:
+Here's a complete example of how to integrate FastPix SDK with THEOplayer. Replace `workSpaceId` with your real workspace key from the [FastPix dashboard](https://dashboard.fastpix.com):
 
 ```kotlin
 import android.os.Bundle
@@ -181,12 +230,12 @@ class MainActivity : AppCompatActivity() {
 
         // Create customer data configuration
         val customerData = CustomerData(
-            workSpaceId = "workspace-id", // Your FastPix workspace ID
+            workSpaceId = "YOUR_WORKSPACE_KEY", // Your FastPix workspace key
             beaconUrl = null, // Optional: Custom beacon URL
             videoDetails = videoDataDetails,
             playerData = PlayerDataDetails(
                 playerName = "THEOplayer",
-                playerVersion = "5.0" // Your THEOplayer version
+                playerVersion = "10.5.0" // Your THEOplayer version
             ),
             customDataDetails = CustomDataDetails(
                 customField1 = "custom-value-1",
@@ -232,7 +281,7 @@ The `CustomerData` class accepts the following parameters:
 
 | Parameter           | Type              | Required | Description                                       |
 |---------------------|-------------------|----------|---------------------------------------------------|
-| `workSpaceId`       | String            | ✅        | Your FastPix workspace identifier                 |
+| `workSpaceId`       | String            | ✅        | Your FastPix workspace key                        |
 | `beaconUrl`         | String            | ❌        | Custom beacon URL (default: metrix.ws)            |
 | `videoDetails`      | VideoDataDetails  | ❌        | Video metadata (see below)                        |
 | `playerData`        | PlayerDataDetails | ❌        | Player information (default: "theo-player", "5+") |
@@ -324,9 +373,9 @@ class VideoPlayerActivity : AppCompatActivity() {
         )
 
         val customerData = CustomerData(
-            workSpaceId = "workspace-id",
+            workSpaceId = "YOUR_WORKSPACE_KEY",
             videoDetails = videoDataDetails,
-            playerData = PlayerDataDetails("THEOplayer", "5.0"),
+            playerData = PlayerDataDetails("THEOplayer", "10.5.0"),
             customDataDetails = CustomDataDetails(
                 customField1 = "custom-data-1"
             )
@@ -429,12 +478,21 @@ Logs will appear in Logcat with the tag `FastPixBaseTheoPlayer`.
 
 ## Troubleshooting
 
+### Playback does not start / "baked-in license" warning
+
+- If Logcat shows `THEOplayer License: The baked-in license is used`, configure your own THEOplayer license. See [Configure your THEOplayer license](#configure-your-theoplayer-license). The baked-in license only plays THEOplayer's demo streams (`cdn.theoplayer.com`).
+
 ### SDK Not Tracking Events
 
 - Ensure you've initialized the SDK after configuring THEOplayer
 - Check that `workSpaceId` is correct
 - Verify THEOplayer events are firing (check THEOplayer logs)
 - Enable logging to see FastPix SDK activity
+
+### Dependencies fail to resolve
+
+- Confirm all three repositories are configured (THEOplayer, FastPix THEOplayer SDK, FastPix core) - see [Installation](#installation)
+- Confirm `gpr.user` / `gpr.key` are set in `local.properties` and your token has the `read:packages` scope
 
 ### Memory Leaks
 
@@ -469,6 +527,9 @@ Playback and quality-of-experience signals: play/pause/seek/buffering events, st
 
 **Is this a video player?**
 No. It does not play or render video. It is a monitoring SDK that attaches to the THEOplayer you already use.
+
+**Do I need a THEOplayer license?**
+Yes, to play your own content. THEOplayer's baked-in license only covers its demo streams. See [Configure your THEOplayer license](#configure-your-theoplayer-license).
 
 **Does THEOplayer have built-in analytics, and how is this different?**
 THEOplayer integrates with third-party analytics and QoE providers through connectors. FastPix is one such Video Data SDK: it collects real-time performance and user engagement data on Android and unifies it with your other FastPix-monitored players in one dashboard.
