@@ -1,22 +1,50 @@
-# FastPix THEO Player SDK
+# FastPix Video Data SDK for THEOplayer - monitor playback performance and QoE on Android
 
 [![License](https://img.shields.io/badge/License-Proprietary-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.0.6-green.svg)](CHANGELOG.md)
 [![Min SDK](https://img.shields.io/badge/minSdk-24-orange.svg)](theo-player-data/build.gradle.kts)
 
-The FastPix THEO Player SDK provides seamless integration between THEOplayer and the FastPix
-analytics platform. This SDK automatically tracks video playback events, metrics, and analytics data
-from your THEOplayer instances, enabling real-time monitoring and insights on the FastPix dashboard.
+The **FastPix Video Data SDK for THEOplayer** is a third-party analytics SDK that monitors video playback performance, quality of service (QoS/QoE), and user interactions in **THEOplayer on Android**. It attaches to your `THEOplayerView`, automatically tracks playback events, and reports real-time performance and user engagement data to the [FastPix dashboard](https://dashboard.fastpix.com).
 
-## Key Features
+It is **not a video player** and does not replace THEOplayer. It is the monitoring layer you add to the THEOplayer you already ship - the same role Mux Data plays - so you can track startup time, rebuffering, bitrate, errors, and viewer engagement without building an analytics pipeline.
 
-- **Automatic Event Tracking** – Automatically captures all playback events (play, pause, seek,
-  buffering, etc.)
-- **THEOplayer Integration** – Built specifically for THEOplayer Android SDK
-- **Real-time Analytics** – Provides instant access to video performance metrics on the FastPix
-  dashboard
-- **Minimal Setup** – Easy integration with just a few lines of code
-- **Custom Metadata** – Support for custom video and player metadata
+**Works with:** THEOplayer Android SDK 5.0+ · Android 7.0+ (API 24) · Kotlin and Java · `io.fastpix.data:theo`
+
+[Monitor THEOplayer docs](https://fastpix.com/docs/video-data/monitors/theoplayer) · [Create a free account](https://dashboard.fastpix.com/signup?utm_source=github&utm_medium=referral&utm_campaign=github_signup)
+
+## Jump to
+
+Skip straight to a section without scrolling:
+
+| Get started | Understand | Reference |
+|---|---|---|
+| [Requirements](#requirements) | [Why FastPix](#why-fastpix) | [Detailed configuration](#detailed-configuration) |
+| [Install the SDK](#installation) | [Who it's for](#who-its-for) | [Which FastPix SDK?](#which-fastpix-sdk-for-which-android-player) |
+| [Quick start](#quick-start) | [What you can track](#what-you-can-track) | [FAQ](#faq) |
+| [Complete sample](#complete-sample-player-implementation) | [Lifecycle management](#lifecycle-management) | [Troubleshooting](#troubleshooting) |
+
+## Why FastPix
+
+THEOplayer fires playback events, but turning them into viewer-facing quality metrics, storing them, and watching them across devices and app versions is work you would otherwise build yourself. FastPix does it for you:
+
+- **Real-time QoE monitoring.** Startup time, rebuffering, bitrate and resolution changes, and errors as they happen on real devices, in one dashboard.
+- **Automatic event tracking.** The SDK listens to THEOplayer's native events, so you keep full control of playback and add monitoring with a few lines.
+- **One data model across platforms.** The same FastPix Video Data metrics are reported from web, iOS, Android, and other player integrations, so you compare experiences like for like.
+- **Your metadata, your dashboard.** Tag views with video, player, and up to ten custom fields and analyze them in the FastPix dashboard.
+
+## Who it's for
+
+- **Android teams shipping THEOplayer** who want production QoE monitoring without building an analytics backend.
+- **Streaming, OTT, and broadcast apps** that need to catch rebuffering, slow startup, and playback errors before users churn.
+- **Teams standardizing analytics across platforms** who want THEOplayer data in the same FastPix dashboard as their web and iOS players.
+
+## What you can track
+
+- **Automatic event tracking** - automatically captures all playback events (play, pause, seek, buffering, etc.)
+- **THEOplayer integration** - built specifically for the THEOplayer Android SDK
+- **Real-time analytics** - instant access to video performance metrics on the FastPix dashboard
+- **Minimal setup** - easy integration with just a few lines of code
+- **Custom metadata** - support for custom video and player metadata
 
 ## Requirements
 
@@ -26,9 +54,11 @@ from your THEOplayer instances, enabling real-time monitoring and insights on th
 - **Kotlin**: 2.0.21+
 - **Java**: 11
 
+You will also need a FastPix account and a workspace key. [Create a free account](https://dashboard.fastpix.com/signup?utm_source=github&utm_medium=referral&utm_campaign=github_signup), then follow [set up a workspace](https://fastpix.com/docs/getting-started/set-up-a-workspace) to find your workspace key.
+
 ## Installation
 
-### Step 1: Add GitHub Packages Repository
+### Add GitHub Packages Repository
 
 Add the GitHub Packages repository to your project's `settings.gradle.kts`:
 
@@ -50,7 +80,7 @@ dependencyResolutionManagement {
 }
 ```
 
-### Step 2: Add Dependencies
+### Add Dependencies
 
 Add the FastPix THEO Player SDK and THEOplayer dependencies to your app's `build.gradle.kts`:
 
@@ -61,7 +91,7 @@ dependencies {
 }
 ```
 
-### Step 3: Configure Authentication
+### Configure Authentication
 
 Create or update `local.properties` in your project root with your GitHub credentials:
 
@@ -74,7 +104,7 @@ lpr.key=YOUR_GITHUB_PERSONAL_ACCESS_TOKEN
 
 ## Quick Start
 
-### 1. Add THEOplayerView to Your Layout
+### Add THEOplayerView to Your Layout
 
 Add the `THEOplayerView` to your activity/fragment layout:
 
@@ -86,7 +116,7 @@ Add the `THEOplayerView` to your activity/fragment layout:
     android:layout_height="match_parent" />
 ```
 
-### 2. Initialize FastPix SDK in Your Activity
+### Initialize FastPix SDK in Your Activity
 
 Here's a complete example of how to integrate FastPix SDK with THEOplayer:
 
@@ -417,12 +447,51 @@ Logs will appear in Logcat with the tag `FastPixBaseTheoPlayer`.
 - Events are tracked based on THEOplayer's native event system
 - Check that THEOplayer is properly configured and receiving events
 
+## Which FastPix SDK for which Android player
+
+FastPix ships a Video Data SDK per player. Pick the one that matches the player your app ships:
+
+| Your Android player | Use this SDK |
+| --- | --- |
+| **THEOplayer** | **FastPix/android-data-theoplayer** (this repository) |
+| **AndroidX Media3** (the current ExoPlayer) | [FastPix/android-data-androidXmedia3](https://github.com/FastPix/android-data-androidXmedia3) |
+| **Google ExoPlayer** (standalone / legacy) | [FastPix/android-data-exoplayer-sdk](https://github.com/FastPix/android-data-exoplayer-sdk) |
+| **Brightcove Player** | [FastPix/android-data-brightcove](https://github.com/FastPix/android-data-brightcove) |
+| Any player, shared core layer | [FastPix/android-core-data-sdk](https://github.com/FastPix/android-core-data-sdk) |
+
+## FAQ
+
+**How do I monitor THEOplayer performance on Android?**
+Add the FastPix Video Data SDK, then create a `FastPixBaseTheoPlayer` with your `THEOplayerView`, workspace key, and optional metadata. It automatically tracks playback events and reports real-time performance and user engagement data to the FastPix dashboard. See [Install the SDK](#installation) and [Quick start](#quick-start).
+
+**What metrics does it track?**
+Playback and quality-of-experience signals: play/pause/seek/buffering events, startup time, rebuffering, bitrate and resolution changes, errors, and viewer engagement, plus any custom metadata you attach.
+
+**Is this a video player?**
+No. It does not play or render video. It is a monitoring SDK that attaches to the THEOplayer you already use.
+
+**Does THEOplayer have built-in analytics, and how is this different?**
+THEOplayer integrates with third-party analytics and QoE providers through connectors. FastPix is one such Video Data SDK: it collects real-time performance and user engagement data on Android and unifies it with your other FastPix-monitored players in one dashboard.
+
+**How does it compare to Mux Data for THEOplayer?**
+Both are third-party Video Data SDKs for THEOplayer. FastPix reports the same class of QoE metrics and unifies THEOplayer data with your web, iOS, and other FastPix-monitored players.
+
+**Do I need a FastPix account?**
+Yes. You need a workspace key from your FastPix account to report data. [Create a free account](https://dashboard.fastpix.com/signup?utm_source=github&utm_medium=referral&utm_campaign=github_signup).
+
+## Documentation
+
+- [Monitor THEOplayer - FastPix docs](https://fastpix.com/docs/video-data/monitors/theoplayer)
+- [FastPix Video Data overview](https://fastpix.com/docs/video-data/overview)
+- [Use custom dimensions](https://fastpix.com/docs/video-data/use-custom-dimensions)
+- [THEOplayer Android SDK docs](https://optiview.dolby.com/docs/theoplayer/android/)
+
 ## Support
 
 For questions, issues, or feature requests:
 
-- **Email**: support@fastpix.io
-- **Documentation**: [FastPix Documentation](https://docs.fastpix.com)
+- **Email**: support@fastpix.com
+- **Documentation**: [FastPix Documentation](https://fastpix.com/docs)
 - **GitHub Issues**: [Report an issue](https://github.com/FastPix/android-data-theoplayer/issues)
 
 ## License
