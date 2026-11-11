@@ -12,9 +12,7 @@ It is **not a video player** and does not replace THEOplayer. It is the monitori
 
 [Monitor THEOplayer docs](https://fastpix.com/docs/video-data/monitors/theoplayer) · [Create a free account](https://dashboard.fastpix.com/signup?utm_source=github&utm_medium=referral&utm_campaign=github_signup)
 
-## Jump to
-
-Skip straight to a section without scrolling:
+## Contents
 
 | Get started | Understand | Reference |
 |---|---|---|
@@ -53,6 +51,7 @@ THEOplayer fires playback events, but turning them into viewer-facing quality me
 - **Target/Compile SDK**: 35+
 - **THEOplayer SDK**: 5.0+ (tested with 10.5.0)
 - **A THEOplayer SDK license**: required to play your own content (see [Configure your THEOplayer license](#configure-your-theoplayer-license))
+- **GitHub Packages credentials**: the FastPix SDKs are published to GitHub Packages, so you need a GitHub username and a personal access token with the `read:packages` scope to download them (see [Configure authentication](#configure-authentication))
 - **Kotlin**: 2.0.21+
 - **Java**: 11
 
